@@ -1,15 +1,12 @@
 cmake_minimum_required(VERSION 3.26)
 project(roar)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
-include_directories(.)
+include_directories(include)
 
 add_executable(roar
-        main.cpp
-        server.h
-        server.cpp
-        client.h
-        client.cpp
-        server.h
+        src/main.cpp
+        src/server.cpp
+        src/client.cpp
 )

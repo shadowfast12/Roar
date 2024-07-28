@@ -18,19 +18,15 @@
 
 class server {
 public:
-    server(const unsigned int &port){
-        serv_addr.sin_family = AF_INET; // Socket will use IPv4
-        serv_addr.sin_addr.s_addr = INADDR_ANY; // will connect to any ip address that requests access
-        serv_addr.sin_port = htons(port); // sets up the port and converts the port to socket numbers
+    // port to connect to & desired address to allow a socket connection
+    explicit server(const unsigned int &port = 8080, const unsigned int &addr = INADDR_ANY);
 
-    }
+    void operate();
+
 private:
     int server_fd, incoming_fd; // socket file descriptor
     struct sockaddr_in serv_addr; // socket address information for the client
     char buffer[1024] = {0}; // buffer for receiving information
-
-    void operate();
-    bool setup();
 
 };
 

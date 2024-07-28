@@ -16,21 +16,17 @@
 // TODO ADD MORE INFORMATION WHEN THE MESSAGE IS SENT (MESSAGE RECEIVED, SIZE, ETC)
 // TODO MULTI-CLIENT CHAT ROOM WHERE THERE'S A RELAY TO ALL THE CLIENTS (MOSTLY SERVER SOCKET WORK)
 // TODO BETTER INTERFACE AND EASY ACCESS
+
 class client {
 public:
-    client(const unsigned int &port){
-        serv_addr.sin_family = AF_INET; // Socket will use IPv4
-        serv_addr.sin_addr.s_addr = INADDR_ANY; // will connect to any ip address that requests access
-        serv_addr.sin_port = htons(port); // sets up the port and converts the port to socket numbers
-
-    }
-private:
-    int server_fd, incoming_fd; // socket file descriptor
-    struct sockaddr_in serv_addr; // socket address information for the client
-    char buffer[1024] = {0}; // buffer for receiving information
+    client(const unsigned int &port = 8080, const char* serverIP = "127.0.0.1");
 
     void operate();
-    bool setup();
+
+private:
+    int client_fd; // socket file descriptor
+    struct sockaddr_in client_addr; // socket address information for the client
+    char buffer[1024] = {0}; // buffer for receiving information
 
 };
 
