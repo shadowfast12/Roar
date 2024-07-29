@@ -7,18 +7,25 @@
 
 
 int main(){
-    int mode = 0;
+    std::string mode;
+    std::cout << "MODE: ";
+    getline(std::cin,mode);
 
-    if(mode == 1){
+    if(mode == "server"){
         server testServer = server();
+        testServer.establish();
         testServer.operate();
     }else{
         client testClient = client();
-        testClient.operate();
+        testClient.connect();
+        std::cout << "Message: ";
+        std::string message;
+        getline(std::cin,message);
+
+        std::cout << std::endl;
+        testClient.send(message.c_str());
 
     }
-
-
     return 0;
 
 }

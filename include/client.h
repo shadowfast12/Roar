@@ -19,9 +19,10 @@
 
 class client {
 public:
-    client(const unsigned int &port = 8080, const char* serverIP = "127.0.0.1");
+    client(){}
 
-    void operate();
+    bool connect(const unsigned int &port = 8080, const char* serverIP = "127.0.0.1");
+    bool send(const char* message);
 
 private:
     int client_fd; // socket file descriptor

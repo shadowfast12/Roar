@@ -18,9 +18,10 @@
 
 class server {
 public:
-    // port to connect to & desired address to allow a socket connection
-    explicit server(const unsigned int &port = 8080, const unsigned int &addr = INADDR_ANY);
+    server(){}
 
+    // port to connect to & desired address to allow a socket connection
+    bool establish(const unsigned int &port = 8080, const unsigned int &addr = INADDR_ANY);
     void operate();
 
 private:

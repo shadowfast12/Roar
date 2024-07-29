@@ -4,7 +4,7 @@
 
 #include "server.h"
 
-server::server(const unsigned int &port, const unsigned int& addr){
+bool server::establish(const unsigned int &port, const unsigned int &addr) {
     int opt = 1;
 
     serv_addr.sin_family = AF_INET; // Socket will use IPv4
@@ -14,18 +14,21 @@ server::server(const unsigned int &port, const unsigned int& addr){
     // create the new tcp socket using IPv4
     if((server_fd = socket(AF_INET,SOCK_STREAM, 0)) == 0){
         perror("Socket Failed");
+        return false;
     }
 
     // setting up the socket options so that the socket can be reused and multiple sockets can bind to the same port
     if(setsockopt(server_fd,SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))){
         perror("Set sock opt Failed");
+        return false;
     }
 
     // binding the socket with the address and port desired
     if(bind(server_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
         perror("Bind Failed");
+        return false;
     }
-
+    return true;
 }
 
 void server::operate() {
@@ -45,8 +48,7 @@ void server::operate() {
     read(incoming_fd, buffer, 1024);
     std::cout << "Message from client: " << buffer << std::endl;
 
-    send(incoming_fd, "Server says hello", strlen("Server says hello"), 0);
-    std::cout << "Hello message sent" << std::endl;
+    send(incoming_fd, "Server received message \n", strlen("Server received message"), 0);
 
     close(incoming_fd);
     close(server_fd);
