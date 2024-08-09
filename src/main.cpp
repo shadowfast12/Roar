@@ -5,28 +5,36 @@
 #include "server.h"
 #include "client.h"
 
+int main()
+{
+    string mode;
 
-int main(){
-    std::string mode;
-    std::cout << "MODE: ";
-    getline(std::cin,mode);
+    cout << "MODE: ";
+    getline(std::cin, mode);
 
-    if(mode == "server"){
+    if (mode == "server")
+    {
         server testServer = server();
         testServer.establish();
-        testServer.operate();
-    }else{
+        string disconnect;
+        testServer.listen();
+        while (true)
+        {
+            testServer.accept();
+            testServer.registerUser();
+        }
+    }
+    else
+    {
         client testClient = client();
         testClient.connect();
-        std::cout << "Message: ";
-        std::string message;
-        getline(std::cin,message);
+        cout << "Login: ";
+        string message;
+        getline(std::cin, message);
 
-        std::cout << std::endl;
-        testClient.send(message.c_str());
-
+        cout << std::endl;
+        testClient.login(message.c_str());
+        testClient.terminate();
     }
     return 0;
-
 }
-

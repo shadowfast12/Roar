@@ -1,0 +1,3 @@
+/mnt/c/Users/danil/Desktop/Roar/build/CMakeFiles/roar.dir
+/mnt/c/Users/danil/Desktop/Roar/build/CMakeFiles/edit_cache.dir
+/mnt/c/Users/danil/Desktop/Roar/build/CMakeFiles/rebuild_cache.dir

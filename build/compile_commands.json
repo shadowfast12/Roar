@@ -1,0 +1,20 @@
+[
+{
+  "directory": "/mnt/c/Users/danil/Desktop/Roar/build",
+  "command": "/usr/bin/c++  -I/mnt/c/Users/danil/Desktop/Roar/include -g -o CMakeFiles/roar.dir/src/main.cpp.o -c /mnt/c/Users/danil/Desktop/Roar/src/main.cpp",
+  "file": "/mnt/c/Users/danil/Desktop/Roar/src/main.cpp",
+  "output": "CMakeFiles/roar.dir/src/main.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/danil/Desktop/Roar/build",
+  "command": "/usr/bin/c++  -I/mnt/c/Users/danil/Desktop/Roar/include -g -o CMakeFiles/roar.dir/src/server.cpp.o -c /mnt/c/Users/danil/Desktop/Roar/src/server.cpp",
+  "file": "/mnt/c/Users/danil/Desktop/Roar/src/server.cpp",
+  "output": "CMakeFiles/roar.dir/src/server.cpp.o"
+},
+{
+  "directory": "/mnt/c/Users/danil/Desktop/Roar/build",
+  "command": "/usr/bin/c++  -I/mnt/c/Users/danil/Desktop/Roar/include -g -o CMakeFiles/roar.dir/src/client.cpp.o -c /mnt/c/Users/danil/Desktop/Roar/src/client.cpp",
+  "file": "/mnt/c/Users/danil/Desktop/Roar/src/client.cpp",
+  "output": "CMakeFiles/roar.dir/src/client.cpp.o"
+}
+]

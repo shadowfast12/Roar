@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/roar.dir/src/main.cpp.o CMakeFiles/roar.dir/src/server.cpp.o CMakeFiles/roar.dir/src/client.cpp.o -o roar
