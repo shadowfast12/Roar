@@ -12,8 +12,9 @@ int main(){
     getline(std::cin,mode);
 
     if(mode == "server"){
-        server testServer = server();
+        server testServer;
         testServer.establish();
+        listen(server_fd, 3);
         testServer.operate();
     }else{
         client testClient = client();
@@ -27,6 +28,5 @@ int main(){
 
     }
     return 0;
-
 }
 
