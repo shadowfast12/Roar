@@ -8,9 +8,9 @@ bool server::establish(const unsigned int &port, const unsigned int &addr)
 {
     int opt = 1;
 
-    client_addr.sin_family = AF_INET;   // Socket will use IPv4
-    client_addr.sin_addr.s_addr = addr; // will connect to any ip address that requests access
-    client_addr.sin_port = htons(port); // sets up the port and converts the port to socket numbers
+    server_addr.sin_family = AF_INET;   // Socket will use IPv4
+    server_addr.sin_addr.s_addr = addr; // will connect to any ip address that requests access
+    server_addr.sin_port = htons(port); // sets up the port and converts the port to socket numbers
 
     // create the new tcp socket using IPv4
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -21,7 +21,7 @@ bool server::establish(const unsigned int &port, const unsigned int &addr)
     }
 
     // setting up the socket options so that the socket can be reused and multiple sockets can bind to the same port
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) < 0)
     {
         perror("Set sock opt Failed");
         close(server_fd);
@@ -29,7 +29,7 @@ bool server::establish(const unsigned int &port, const unsigned int &addr)
     }
 
     // binding the socket with the address and port desired
-    if (bind(server_fd, (sockaddr *)&client_addr, sizeof(client_addr)) < 0)
+    if (bind(server_fd, (sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
         perror("Bind Failed");
         close(server_fd);
@@ -51,56 +51,170 @@ bool server::listen()
     return true;
 }
 
-bool server::accept() // continue to accept clients until an error
+int server::accept() // continue to accept clients until an error
 {
-    int addrLen = (sizeof(client_addr));
+    cout << "trying to accept a client" << endl;
 
-    // accepting connections and returns a new socket descriptor for the connection
-    if ((incoming_fd = ::accept(server_fd, (sockaddr *)&client_addr, (socklen_t *)&addrLen)) == -1)
+    FD_ZERO(&readfds);
+    FD_SET(server_fd, &readfds);
+    for (auto sd : client_fds) // add client file descriptors into the fd_set
     {
-        cout << "accept failed" << endl;
-        perror("Accept Failed");
-        close(incoming_fd);
+        cout << "sd: " << sd << endl;
+        FD_SET(sd, &readfds);
+        if (sd > maxfd)
+        {
+            maxfd = sd;
+        }
+    }
+    if (server_fd > maxfd)
+    {
+        maxfd = server_fd;
+    }
+
+    readiness = select(maxfd + 1, &readfds, NULL, NULL, NULL);
+    if (readiness < 0)
+    {
+        perror("readiness error");
+        terminate();
+        return -1;
+    }
+    cout << "there are " << readiness << " ready socket descriptors" << endl;
+
+    if (FD_ISSET(server_fd, &readfds)) // server is ready to accept
+    {
+        int addrLen = (sizeof(client_addr));
+        int client_fd;
+        client_fd = ::accept(server_fd, (sockaddr *)&client_addr, (socklen_t *)&addrLen);
+        if (client_fd < 0)
+        {
+            perror("Accept failed");
+            terminate();
+            return -1;
+        }
+
+        // add the client to the list
+        client_fds.push_back(client_fd);
+        cout << "client accepted" << endl;
+        cout << "new client: " << client_fd << ". IP: " << inet_ntoa(client_addr.sin_addr) << endl;
+    }
+
+    return 0;
+}
+
+bool server::send(int client_fd)
+{
+    cout << "Message to client: " << endl;
+    char message[100];
+    fgets(message, sizeof(message), stdin);
+    if (::send(client_fd, message, strlen(message), 0) == -1)
+    {
+        perror("Sending request unsuccessful");
+        close(client_fd);
         close(server_fd);
         return false;
     }
-    cout << "client accepted" << endl;
     return true;
 }
 
-// to receive the client's username and bind it with the socket, basically registering the user.
-bool server::registerUser()
+bool server::receive() // add threading for receive
 {
-    int bytes_read;
-
-    while ((bytes_read = read(incoming_fd, buffer, 1024)) > 0)
+    while (true)
     {
-        std::cout << "Client's username: " << buffer << std::endl;
+        cout << "trying to receive" << endl;
+        for (int i = 0; i < client_fds.size(); i++)
+        {
+            cout << "there are " << client_fds.size() << " client(s)" << endl;
+            int sd = client_fds[i];
+            if (FD_ISSET(sd, &readfds))
+            { // the client is ready to read
+                cout << "ready to read from clients" << endl;
+                valread = read(sd, buffer, sizeof(buffer));
+                cout << "JUST READ" << endl;
+                if (valread < 0)
+                {
+                    perror("Message not received");
+                    return false;
+                }
+
+                if (valread == 0)
+                {
+                    cout << "client disconnected" << endl;
+                    getpeername(sd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addr);
+                    cout << "IP: " << inet_ntoa(client_addr.sin_addr) << endl;
+
+                    // remove the client from the list
+                    close(sd);
+                    client_fds.erase(client_fds.begin() + i);
+                }
+                else
+                {
+                    cout << buffer << endl;
+                }
+                memset(buffer, 0, sizeof(buffer));
+            }
+            else
+            {
+                cout << "no client has sent a message yet" << endl;
+            }
+        }
     }
-
-    if (bytes_read < 0)
-    {
-        perror("Failed to receive username from client");
-        close(incoming_fd);
-        close(server_fd);
-        return false;
-    }
-
-    // the client's file descriptor is now associate with the username
-    system[buffer] = incoming_fd;
-
-    cout << "inside the system: " << system[buffer] << endl;
 
     return true;
 }
 
-bool server::handle_client(char *username)
+bool server::communicate(int client_fd)
 {
-    server::accept();
-    server::registerUser();
+    while (true)
+    {
+        if (::read(client_fd, buffer, sizeof(buffer)) == -1)
+        {
+            perror("reading message failed");
+            close(server_fd);
+            close(client_fd);
+            break;
+        }
+
+        // echo the message back to the client
+        if (::send(client_fd, buffer, sizeof(buffer), 0) == -1)
+        {
+            perror("sending message failed");
+            close(server_fd);
+            close(client_fd);
+            break;
+        }
+
+        // clear the buffer?
+        clearBuffer();
+    }
+    close(server_fd);
+    close(client_fd);
+    return true;
+}
+
+// vector<thread> *server::getThreads()
+// {
+//     return &threads;
+// }
+
+// void server::joinThreads() // to end all threads
+// {
+//     for (auto &t : threads)
+//     {
+//         t.join();
+//     }
+// }
+
+void server::clearBuffer()
+{
+    memset(buffer, 0, sizeof(buffer));
 }
 
 void server::terminate()
 {
+    // make a vector of client file descriptors
+    for (int client_fd : client_fds)
+    {
+        close(client_fd);
+    }
     close(server_fd);
 }
