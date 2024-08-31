@@ -4,7 +4,7 @@
 
 #include "client.h"
 
-bool client::connect(const unsigned int &port, const char *serverIP)
+void client::connect(const unsigned int &port, const char *serverIP)
 {
 
     server_addr.sin_family = AF_INET;   // Socket will use IPv4
@@ -14,7 +14,7 @@ bool client::connect(const unsigned int &port, const char *serverIP)
     if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("Socket Failed");
-        return false;
+        terminate();
     }
 
     // prepare the server's ip address for a connection attempt and check if it's good
@@ -22,53 +22,57 @@ bool client::connect(const unsigned int &port, const char *serverIP)
     if (inet_pton(AF_INET, (const char *)serverIP, &server_addr.sin_addr) < 0)
     {
         perror("Server Address Failed");
-        return false;
+        terminate();
     }
 
     // connect to the server
     if (::connect(client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
         perror("Server connection Failed");
-        return false;
+        terminate();
     }
     cout << "connection successful" << endl;
-    return true;
 }
 
-bool client::send(const char *message)
+void client::send(const char *message)
 {
-
-    if (::send(client_fd, message, strlen(message), 0) < 0)
+    ssize_t bytes_sent = ::send(client_fd, message, strlen(message), 0); // send() not returning an error after trying to send to a disconnected server
+    cout << "bytes sent: " << bytes_sent << endl;
+    if (bytes_sent < 0)
     {
+        if (errno == EPIPE)
+        {
+            cout << "server disconnected" << endl;
+        }
         perror("Sending message Failed");
-        return false;
+        terminate();
     }
 
     int bytes_read;
-    while ((bytes_read = ::read(client_fd, buffer, 1024)) > 0) // to constantly check if the message is read
-    {
-        std::cout << "FROM SERVER: " << buffer << std::endl;
-    }
+    cout << "receiving message back from server" << endl;
+    // this while loop stops when false
+    // CHANGE: deleted while loop
+    bytes_read = ::read(client_fd, buffer, 1024);
+
+    std::cout << "FROM SERVER: " << buffer << std::endl;
 
     if (bytes_read < 0)
     {
         perror("Relay from server Failed");
-        return false;
+        terminate();
     }
-    return true;
 }
 
-bool client::receive()
+void client::receive()
 {
     int bytes_size = read(client_fd, buffer, sizeof(buffer));
     if (bytes_size < 0)
     {
         perror("Message not received");
-        return false;
+        terminate();
     }
 
     cout << "Server: " << buffer << endl;
-    return true;
 }
 void client::terminate()
 {

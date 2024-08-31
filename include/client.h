@@ -23,16 +23,16 @@ using namespace std;
 class client
 {
 public:
-    bool connect(const unsigned int &port = 8080, const char *serverIP = "127.0.0.1");
-    bool login(const char *username);
-    bool send(const char *message);
+    void connect(const unsigned int &port = 8080, const char *serverIP = "127.0.0.1");
+    void send(const char *message);
+    void receive();
     void terminate();
 
 private:
-    int client_fd; // socket file descriptor
-    char username[100];
-    struct sockaddr_in client_addr; // socket address information for the client
-    char buffer[1024] = {0};        // buffer for receiving information
+    int client_fd = -1; // socket file descriptor
+    struct sockaddr_in server_addr;
+    char buffer[1024] = {0}; // buffer for receiving information
+    // double array buffer to keep multiple messages?
 };
 
 #endif // ROAR_CLIENT_H
