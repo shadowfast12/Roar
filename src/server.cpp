@@ -64,7 +64,14 @@ int server::accept() // continue to accept clients until an error
     readiness = select(maxfd + 1, &readfds, NULL, NULL, NULL);
     if (readiness < 0)
     {
-        perror("readiness error");
+        if (errno == EINTR) // signal handler doesn't prevent signals from interrupting blocking calls (ex: select())
+        {
+            perror("interruption signal was sent");
+        }
+        else
+        {
+            perror("readiness error");
+        }
         return -1;
     }
     cout << "there are " << readiness << " ready socket descriptors" << endl;
@@ -100,9 +107,63 @@ void server::send(int client_fd)
     }
 }
 
-void server::receive(int client_fd) // add threading for receive
+int server::selectClient(int client_fd)
 {
-    while (client_fd != -1)
+    int recipient_client = -1;
+
+    string client_list;
+    string full_message;
+    char init_message[1024];
+
+    while (client_fd != -1 && client_fds.size() > 1)
+    {
+        client_list = ""; // resetting every loop
+        full_message = "";
+        for (int i = 0; i < client_fds.size(); i++)
+        {
+            if (i == client_fds.size() - 1)
+            {
+                client_list += std::to_string(client_fds[i]);
+            }
+            else
+            {
+                client_list += (std::to_string(client_fds[i]) + ", ");
+            }
+        }
+        full_message = "give the number of the client you wish to send message to: " + client_list;
+        std::strcpy(init_message, full_message.c_str());
+        if (::send(client_fd, init_message, sizeof(init_message), 0) < 0)
+        {
+            perror("sending message failed");
+        }
+        if (read(client_fd, buffer, sizeof(buffer)) < 0)
+        {
+            perror("Message not received");
+        }
+        std::string str(buffer);
+        recipient_client = std::stoi(str);
+        cout << "wishlist client: " << recipient_client << endl;
+        clearBuffer();
+        if (std::find(client_fds.begin(), client_fds.end(), recipient_client) == client_fds.end())
+        {
+            char error_message[] = "client not found!";
+            if (::send(client_fd, error_message, sizeof(error_message), 0) < 0)
+            {
+                perror("sending message failed");
+            }
+        }
+        else
+        {
+            continue;
+        }
+    }
+
+    return recipient_client;
+}
+
+void server::handleComm(int client_fd, int recipient) // add threading for receive
+{
+    while (client_fd != -1 && recipient != -1)
     {
         cout << "trying to receive message from client " << client_fd << endl;
         // the client is ready to read
@@ -111,6 +172,7 @@ void server::receive(int client_fd) // add threading for receive
         if (valread < 0)
         {
             perror("Message not received");
+            break;
         }
 
         if (valread == 0)
@@ -126,13 +188,13 @@ void server::receive(int client_fd) // add threading for receive
             break;
         }
         // received message and now send it back to the client
-        if (::send(client_fd, buffer, sizeof(buffer), 0) < 0)
+        if (::send(recipient, buffer, sizeof(buffer), 0) < 0)
         {
             perror("sending message failed");
         }
         cout << buffer << endl;
 
-        memset(buffer, 0, sizeof(buffer));
+        clearBuffer();
     }
 }
 

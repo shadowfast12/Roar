@@ -44,6 +44,10 @@ void client::send(const char *message)
         {
             cout << "server disconnected" << endl;
         }
+        else if (errno == EINTR)
+        {
+            cout << "signal interrupter has been called" << endl;
+        }
         perror("Sending message Failed");
         terminate();
     }
